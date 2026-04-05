@@ -62,8 +62,7 @@
     @if (puzzle(); as data) {
       <div class="mt-8">
         <p class="text-xs text-[#656d76] mb-3">
-          Seed: <span class="font-mono text-[#8b949e]">{{ data.seed }}</span>
-          &middot; {{ data.size }}&times;{{ data.size }} &middot;
+          {{ data.size }}&times;{{ data.size }} &middot;
           {{ data.words.length }} words
         </p>
         <app-crossword-grid [data]="data" />
