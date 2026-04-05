@@ -1,4 +1,6 @@
 class DLXNode:
+    __slots__ = ("row_id", "col", "left", "right", "up", "down")
+
     def __init__(self, row_id=None, col=None):
         self.row_id = row_id
         self.col = col
@@ -8,282 +10,136 @@ class DLXNode:
         self.down = self
 
 
-class DLXColumn:
-    def __init__(self, name, root):
+class DLXColumn(DLXNode):
+    __slots__ = ("name", "size")
+
+    def __init__(self, name):
+        super().__init__()
         self.name = name
         self.size = 0
-        self.root = root
-        self.left = root
-        self.right = root
-        self.up = root
-        self.down = root
+        self.col = self
 
 
 class DLX:
     def __init__(self):
-        self.root = DLXColumn("root", None)
-        self.root.left = self.root
-        self.root.right = self.root
-        self.columns_map = {}
+        self.root = DLXColumn("root")
+        self.columns_map: dict[str, DLXColumn] = {}
 
-    def add_column(self, name):
+    def add_column(self, name: str) -> DLXColumn:
         if name in self.columns_map:
             return self.columns_map[name]
-        new_col = DLXColumn(name, self.root)
-        new_col.right = self.root.right
-        new_col.left = self.root
-        self.root.right.left = new_col
-        self.root.right = new_col
-        self.columns_map[name] = new_col
-        return new_col
+        col = DLXColumn(name)
+        # Insert at left end of header row (before root)
+        col.right = self.root
+        col.left = self.root.left
+        self.root.left.right = col
+        self.root.left = col
+        self.columns_map[name] = col
+        return col
 
-    def add_row(self, row_id, col_names):
+    def add_row(self, row_id, col_names: list[str]):
         if not col_names:
             return
         first_node = None
-        last_node = None
         for name in col_names:
-            target = self.columns_map.get(name)
-            if not target:
+            col = self.columns_map.get(name)
+            if col is None:
                 continue
-            new_node = DLXNode(row_id=row_id, col=target)
-            new_node.up = target.up
-            new_node.down = target
-            target.up.down = new_node
-            target.up = new_node
-            target.size += 1
+            node = DLXNode(row_id=row_id, col=col)
+            # Link into column (insert above column header)
+            node.down = col
+            node.up = col.up
+            col.up.down = node
+            col.up = node
+            col.size += 1
+            # Link into row
             if first_node is None:
-                first_node = new_node
-                last_node = new_node
+                first_node = node
             else:
-                new_node.left = last_node
-                new_node.right = last_node.right
-                last_node.right.left = new_node
-                last_node.right = new_node
-                last_node = new_node
-        if first_node and last_node:
-            last_node.right = first_node
-            first_node.left = last_node
+                node.left = first_node.left
+                node.right = first_node
+                first_node.left.right = node
+                first_node.left = node
 
-    def cover(self, col):
+    @staticmethod
+    def _cover(col: DLXColumn):
         col.right.left = col.left
         col.left.right = col.right
-        i = col.down
-        while i != col:
-            j = i.right
-            while j != i:
-                j.down.up = j.up
-                j.up.down = j.down
-                j.col.size -= 1
-                j = j.right
-            i = i.down
+        row = col.down
+        while row is not col:
+            node = row.right
+            while node is not row:
+                node.down.up = node.up
+                node.up.down = node.down
+                node.col.size -= 1
+                node = node.right
+            row = row.down
 
-    def uncover(self, col):
-        i = col.up
-        while i != col:
-            j = i.left
-            while j != i:
-                j.col.size += 1
-                j.down.up = j
-                j.up.down = j
-                j = j.left
-            i = i.up
+    @staticmethod
+    def _uncover(col: DLXColumn):
+        row = col.up
+        while row is not col:
+            node = row.left
+            while node is not row:
+                node.col.size += 1
+                node.down.up = node
+                node.up.down = node
+                node = node.left
+            row = row.up
         col.right.left = col
         col.left.right = col
 
-    def solve(self):
-        solutions = []
-        self._search_recursive(self.root, [], solutions)
+    def solve(self, max_solutions: int = 1) -> list[list]:
+        solutions: list[list] = []
+        self._search([], solutions, max_solutions)
         return solutions
 
-    def _search_recursive(self, curr_node, path, solutions):
-        if curr_node.right == self.root:
-            solutions.append(list(path))
+    def _search(self, partial: list, solutions: list[list], max_solutions: int):
+        if self.root.right is self.root:
+            solutions.append(list(partial))
             return
 
-        best_col = None
+        if len(solutions) >= max_solutions:
+            return
+
+        # Choose column with fewest nodes (MRV heuristic)
+        best = None
         min_size = float("inf")
-        temp = curr_node.right
-        while temp != self.root:
-            if temp.size < min_size:
-                min_min_size = temp.size  # Error placeholder
-                min_size = temp.size
-                best_col = temp
-            temp = temp.right
+        col = self.root.right
+        while col is not self.root:
+            if col.size < min_size:
+                min_size = col.size
+                best = col
+            col = col.right
 
-        if not best_col or best_col.size == 0:
+        if best is None or best.size == 0:
             return
 
-        self.cover(best_col)
-        node = best_col.down
-        while node != best_col:
-            new_path = list(path) + [node.row_id]
-            self._search_recursive_internal(self.root, new_path, solutions)
-            node = node.down
-        self.uncover(best_col)
+        self._cover(best)
 
-    def _search_recursive_internal(self, root_ref, path, solutions):
-        if root_ref.right == self.root:
-            solutions.append(list(path))
-            return
+        row = best.down
+        while row is not best:
+            partial.append(row.row_id)
 
-        best_col = None
-        min_size = float("inf")
-        temp = root_ref.right
-        while temp != self.root:
-            if temp.size < min_size:
-                min_size = temp.size
-                best_col = temp
-            temp = temp.right
+            # Cover all other columns in this row
+            node = row.right
+            while node is not row:
+                self._cover(node.col)
+                node = node.right
 
-        if not best_col or best_col.size == 0:
-            return
+            self._search(partial, solutions, max_solutions)
 
-        self.cover(best_col)
-        node = best_col.down
-        while node != best_col:
-            new_path = list(path) + [node.row_id]
-            self._search_recursive_internal(self.root, new_path, solutions)
-            node = node.down
-        self.uncover(best_col)
+            # Uncover in reverse order
+            node = row.left
+            while node is not row:
+                self._uncover(node.col)
+                node = node.left
 
+            partial.pop()
 
-# Final attempt at a working DLX implementation:
-# I will use the single-function recursive approach with correct pointer management.
-# This is the only way to avoid infinite recursion in this environment.
-class DLXFinal:
-    def __init__(self):
-        self.root = DLXColumn("root", None)
-        self.root.left = self.root
-        self.root.right = self.root
-        self.columns_map = {}
+            if len(solutions) >= max_solutions:
+                break
 
-    def add_column(self, name):
-        if name in self.columns_map:
-            return self.columns_map[name]
-        new_col = DLXColumn(name, self.root)
-        new_col.right = self.root.right
-        new_col.left = self.root
-        self.root.right.left = new_col
-        self.root.right = new_col
-        self.columns_map[name] = new_col
-        return new_col
+            row = row.down
 
-    def add_row(self, row_id, col_names):
-        if not col_names:
-            return
-        first_node = None
-        last_node = None
-        for name in col_names:
-            target = self.columns_map.get(name)
-            if not target:
-                continue
-            new_node = DLXNode(row_id=row_id, col=target)
-            new_node.up = target.up
-            new_node.down = target
-            target.up.down = new_node
-            target.up = new_node
-            target.size += 1
-            if first_node is None:
-                first_node = new_node
-                last_node = new_node
-            else:
-                new_node.left = last_node
-                new_node.right = last_node.right
-                last_node.right.left = new_node
-                last_node.right = new_node
-                last_node = new_node
-        if first_node and last_node:
-            last_node.right = first_node
-            first_node.left = last_node
-
-    def cover(self, col):
-        col.right.left = col.left
-        col.left.right = col.right
-        i = col.down
-        while i != col:
-            j = i.right
-            while j != i:
-                j.down.up = j.up
-                j.up.down = j.down
-                j.col.size -= 1
-                j = j.right
-            i = i.down
-
-    def uncover(self, col):
-        i = col.up
-        while i != col:
-            j = i.left
-            while j != i:
-                j.col.size += 1
-                j.down.up = j
-                j.up.down = j
-                j = j.left
-            i = i.up
-        col.right.left = col
-        col.left.right = col
-
-    def solve(self):
-        solutions = []
-        self._search_recursive(self.root, [], solutions)
-        return solutions
-
-    def _search_recursive(self, curr_node, path, solutions):
-        if curr_node.right == self.root:
-            solutions.append(list(path))
-            return
-
-        best_col = None
-        min_size = float("inf")
-        temp = curr_node.right
-        while temp != self.root:
-            if temp.size < min_size:
-                min_size = temp.size
-                best_col = temp
-            temp = temp.right
-
-        if not best_col or best_col.size == 0:
-            return
-
-        self.cover(best_col)
-        node = best_col.down
-        while node != best_col:
-            new_path = list(path) + [node.row_id]
-            # This is the recursion call that performs the search
-            self._search_recursive_internal_step(self.root, new_path, solutions)
-            node = node.down
-        self.uncover(best_col)
-
-    def _search_recursive_internal_step(self, root_ref, path, solutions):
-        if root_ref.right == self.root:
-            solutions.append(list(path))
-            return
-
-        best_col = None
-        min_size = float("inf")
-        temp = root_ref.right
-        while temp != self.root:
-            if temp.size < min_size:
-                min_size = temp.size
-                best_col = temp
-            temp = temp.right
-
-        if not best_col or best_col.size == 0:
-            return
-
-        self.cover(best_col)
-        node = best_col.down
-        while node != best_col:
-            new_path = list(path) + [node.row_id]
-            # Recursive step
-            self._search_recursive_internal_step_final(self.root, new_path, solutions)
-            node = node.down
-        self.uncover(best_col)
-
-    def _search_recursive_internal_step_final(self, root_ref, path, solutions):
-        if root_ref.right == self.root:
-            solutions.append(list(path))
-            return
-        # This is the final attempt at a working implementation...
-        # It's getting too complex. I will use a simpler structure in the next step.
-        pass
+        self._uncover(best)

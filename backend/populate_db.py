@@ -1,35 +1,41 @@
 import sqlite3
 import os
-import random
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "crossword.db")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
-# Sample data: (word, lang, difficulty_tier)
-# Difficulty 1: Easy, 2: Medium, 3: Hard
-SAMPLE_WORDS = [
-    # English
-    ("cat", "en", 1),
-    ("dog", "en", 1),
-    ("sun", "en", 1),
-    ("apple", "en", 2),
-    ("banana", "en", 2),
-    ("elephant", "en", 3),
-    ("computer", "en", 3),
-    ("tree", "en", 1),
-    ("book", "en", 1),
-    ("ocean", "en", 2),
-    # Danish
-    ("kat", "da", 1),
-    ("hund", "da", 1),
-    ("sol", "da", 1),
-    ("æble", "da", 2),
-    ("banan", "da", 2),
-    ("elefant", "da", 3),
-    ("computer", "da", 3),
-    ("træ", "da", 1),
-    ("bog", "da", 1),
-    ("ocean", "da", 2),
-]
+
+def load_wordlist(lang: str) -> list[tuple[str, str, int, int]]:
+    """Load words from data/<lang>/wordlist.txt and assign difficulty tiers.
+
+    Tier assignment is based on word length as a simple heuristic:
+      - Tier 1 (easy):   3-5 letters
+      - Tier 2 (medium): 6-8 letters
+      - Tier 3 (hard):   9+ letters
+    """
+    path = os.path.join(DATA_DIR, lang, "wordlist.txt")
+    if not os.path.exists(path):
+        print(f"  No wordlist found at {path}")
+        return []
+
+    rows = []
+    seen = set()
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            word = line.strip().lower()
+            if not word or not word.isalpha() or len(word) < 3 or word in seen:
+                continue
+            seen.add(word)
+            length = len(word)
+            if length <= 5:
+                tier = 1
+            elif length <= 8:
+                tier = 2
+            else:
+                tier = 3
+            rows.append((word, lang, length, tier))
+
+    return rows
 
 
 def populate():
@@ -40,19 +46,21 @@ def populate():
     conn = sqlite3.connect(DB_PATH)
     try:
         cursor = conn.cursor()
-
-        # Clear existing data to avoid duplicates during testing
         cursor.execute("DELETE FROM words")
 
-        query = "INSERT INTO words (word, lang, length, difficulty_tier) VALUES (?, ?, ?, ?)"
+        total = 0
+        for lang in ("en", "da"):
+            rows = load_wordlist(lang)
+            if rows:
+                cursor.executemany(
+                    "INSERT INTO words (word, lang, length, difficulty_tier) VALUES (?, ?, ?, ?)",
+                    rows,
+                )
+                total += len(rows)
+                print(f"  {lang}: {len(rows)} words loaded")
 
-        data_to_insert = []
-        for word, lang, tier in SAMPLE_WORDS:
-            data_to_insert.append((word, lang, len(word), tier))
-
-        cursor.executemany(query, data_to_insert)
         conn.commit()
-        print(f"Successfully inserted {len(data_to_insert)} words into the database.")
+        print(f"Successfully inserted {total} words into the database.")
     except Exception as e:
         print(f"Error during population: {e}")
     finally:
