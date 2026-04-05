@@ -1,0 +1,15 @@
+CREATE TABLE words (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    word TEXT NOT NULL,
+    lang TEXT NOT NULL, -- 'en' or 'da'
+    length INTEGER NOT NULL, -- length of the word
+    difficulty_tier INTEGER NOT NULL, -- 1 (easy), 2 (medium), 3 (hard)
+    frequency_score REAL DEFAULT 0.0 -- optional: for fine-grained sorting/sampling
+);
+
+-- Indexing strategy for O(1)-ish lookup performance:
+-- The core requirement is: SELECT word FROM words WHERE lang=? AND length=? AND difficulty_tier=?
+CREATE INDEX idx_word_lookup ON words (lang, length, difficulty_tier);
+
+-- Example of how data will be structured in the 'data' directory:
+-- data/en_words.csv or similar format to be ingested into SQLite

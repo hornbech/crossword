@@ -1,0 +1,28 @@
+# Node.js
+node_modules/
+dist/
+.angular/
+.cache/
+.tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# SQLite
+*.sqlite3
+*.db
+
+# Docker
+.docker/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
