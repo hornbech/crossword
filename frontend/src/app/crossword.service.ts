@@ -9,6 +9,7 @@ export interface PlacedWord {
   col: number;
   direction: 'across' | 'down';
   length: number;
+  clue: string | null;
 }
 
 export interface CrosswordResponse {

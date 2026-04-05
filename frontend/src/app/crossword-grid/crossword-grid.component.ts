@@ -133,7 +133,8 @@ interface CellState {
                   <span class="font-medium text-[#e6edf3]"
                     >{{ clue.clue_number }}.</span
                   >
-                  {{ clue.length }} letters
+                  {{ clue.clue || clue.length + ' letters' }}
+                  <span class="text-[#656d76]">({{ clue.length }})</span>
                 </li>
               }
             </ul>
@@ -161,7 +162,8 @@ interface CellState {
                   <span class="font-medium text-[#e6edf3]"
                     >{{ clue.clue_number }}.</span
                   >
-                  {{ clue.length }} letters
+                  {{ clue.clue || clue.length + ' letters' }}
+                  <span class="text-[#656d76]">({{ clue.length }})</span>
                 </li>
               }
             </ul>

@@ -7,6 +7,7 @@ import asyncio
 from typing import List
 
 from solver.crossword_engine import CrosswordEngine
+from clue_service import init_definitions_table, get_clues
 
 app = FastAPI(
     title="Crossword Generator API",
@@ -50,6 +51,7 @@ class PlacedWordResponse(BaseModel):
     col: int
     direction: str
     length: int
+    clue: str | None = None
 
 
 class CrosswordResponse(BaseModel):
@@ -92,6 +94,7 @@ def _init_stats_table():
 @app.on_event("startup")
 async def startup():
     _init_stats_table()
+    init_definitions_table(DB_PATH)
 
 
 async def _broadcast_active_users():
@@ -157,6 +160,10 @@ async def generate_crossword(
             detail="Could not generate a valid crossword for the given parameters. Try a different seed.",
         )
 
+    # Fetch clues for all placed words
+    unique_words = list({pw.word for pw in result.placed_words})
+    clues = get_clues(unique_words, DB_PATH)
+
     words = [
         PlacedWordResponse(
             word=pw.word,
@@ -165,6 +172,7 @@ async def generate_crossword(
             col=pw.slot.col,
             direction=pw.slot.direction,
             length=pw.slot.length,
+            clue=clues.get(pw.word),
         )
         for pw in result.placed_words
     ]
