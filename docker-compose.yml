@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=/app/data/crossword.db
+    networks:
+      - crossword-net
+
+  frontend:
+    build:
+      context: ./docker
+      dockerfile: frontend.Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - crossword-net
+
+networks:
+  crossword-net:
+    driver: bridge
