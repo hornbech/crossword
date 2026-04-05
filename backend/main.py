@@ -7,7 +7,12 @@ from typing import List, Optional
 
 from solver.crossword_engine import CrosswordEngine
 
-app = FastAPI(title="Crossword Generator API")
+app = FastAPI(
+    title="Crossword Generator API",
+    description="Deterministic crossword puzzle generation using Dancing Links (DLX). "
+    "Supports English and Danish with adjustable difficulty.",
+    version="0.3.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
