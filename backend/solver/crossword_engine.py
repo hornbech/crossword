@@ -89,8 +89,8 @@ class WordIndex:
 
 class CrosswordEngine:
     MIN_WORD_LENGTH = 3
-    MAX_GRID_ATTEMPTS = 30
-    MAX_BACKTRACKS = 100_000
+    MAX_GRID_ATTEMPTS = 50
+    MAX_BACKTRACKS = 500_000
     MAX_CANDIDATES_PER_STEP = 50  # max words to try at each backtrack step
 
     def __init__(self, db_path: str):
