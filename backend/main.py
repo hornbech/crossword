@@ -1,9 +1,10 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sqlite3
 import os
-from typing import List, Optional
+import asyncio
+from typing import List
 
 from solver.crossword_engine import CrosswordEngine
 
@@ -11,7 +12,7 @@ app = FastAPI(
     title="Crossword Generator API",
     description="Deterministic crossword puzzle generation using Dancing Links (DLX). "
     "Supports English and Danish with adjustable difficulty.",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 app.add_middleware(
@@ -21,12 +22,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_PATH = os.path.join(
-    os.environ.get("DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data")),
-    "crossword.db",
-)
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data"))
+DB_PATH = os.path.join(DATA_DIR, "crossword.db")
 
 engine = CrosswordEngine(DB_PATH)
+
+
+# -- Active connections tracking ----------------------------------------------
+
+active_connections: set[WebSocket] = set()
 
 
 # -- Response Models ----------------------------------------------------------
@@ -56,7 +60,87 @@ class CrosswordResponse(BaseModel):
     words: list[PlacedWordResponse]
 
 
+class StatsResponse(BaseModel):
+    total_visitors: int
+    active_users: int
+
+
+# -- Helper -------------------------------------------------------------------
+
+
+def _get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _init_stats_table():
+    conn = _get_db()
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS stats ("
+        "  key TEXT PRIMARY KEY,"
+        "  value INTEGER NOT NULL DEFAULT 0"
+        ")"
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO stats (key, value) VALUES ('total_visitors', 0)"
+    )
+    conn.commit()
+    conn.close()
+
+
+@app.on_event("startup")
+async def startup():
+    _init_stats_table()
+
+
+async def _broadcast_active_users():
+    count = len(active_connections)
+    msg = f'{{"active_users": {count}}}'
+    to_remove = []
+    for ws in active_connections:
+        try:
+            await ws.send_text(msg)
+        except Exception:
+            to_remove.append(ws)
+    for ws in to_remove:
+        active_connections.discard(ws)
+
+
 # -- Endpoints ----------------------------------------------------------------
+
+
+@app.post("/visit", response_model=StatsResponse)
+async def record_visit():
+    conn = _get_db()
+    conn.execute("UPDATE stats SET value = value + 1 WHERE key = 'total_visitors'")
+    conn.commit()
+    row = conn.execute("SELECT value FROM stats WHERE key = 'total_visitors'").fetchone()
+    conn.close()
+    return StatsResponse(total_visitors=row[0], active_users=len(active_connections))
+
+
+@app.get("/stats", response_model=StatsResponse)
+async def get_stats():
+    conn = _get_db()
+    row = conn.execute("SELECT value FROM stats WHERE key = 'total_visitors'").fetchone()
+    conn.close()
+    return StatsResponse(total_visitors=row[0], active_users=len(active_connections))
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(ws: WebSocket):
+    await ws.accept()
+    active_connections.add(ws)
+    await _broadcast_active_users()
+    try:
+        while True:
+            await ws.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        active_connections.discard(ws)
+        await _broadcast_active_users()
 
 
 @app.get("/generate", response_model=CrosswordResponse)
@@ -100,11 +184,9 @@ async def get_words(
     length: int = Query(..., gt=0),
     difficulty_tier: int = Query(..., ge=1, le=3),
 ):
+    conn = _get_db()
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-
         query = """
             SELECT word, lang, length, difficulty_tier
             FROM words
@@ -112,11 +194,11 @@ async def get_words(
         """
         cursor.execute(query, (lang, length, difficulty_tier))
         rows = cursor.fetchall()
-        conn.close()
-
         return [dict(row) for row in rows]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 
 @app.get("/health")

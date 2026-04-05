@@ -5,20 +5,20 @@ import { CrosswordResponse } from '../crossword.service';
   selector: 'app-crossword-grid',
   template: `
     @if (data(); as puzzle) {
-      <div class="inline-block border-2 border-gray-800">
+      <div class="inline-block border border-[#30363d] rounded-lg overflow-hidden">
         @for (row of puzzle.grid; track $index; let r = $index) {
           <div class="flex">
             @for (cell of row; track $index; let c = $index) {
               <div
-                class="relative w-10 h-10 border border-gray-300 flex items-center justify-center text-sm font-bold select-none"
-                [class.bg-gray-900]="cell === '#'"
-                [class.bg-white]="cell !== '#'"
-                [class.text-gray-800]="cell !== '#'"
+                class="relative w-10 h-10 border border-[#21262d] flex items-center justify-center text-sm font-bold select-none"
+                [class.bg-[#0d1117]]="cell === '#'"
+                [class.bg-[#1c2128]]="cell !== '#'"
+                [class.text-[#e6edf3]]="cell !== '#'"
               >
                 @if (cell !== '#') {
                   @if (clueNumber(r, c); as num) {
                     <span
-                      class="absolute top-0 left-0.5 text-[9px] font-medium text-gray-500 leading-none"
+                      class="absolute top-0 left-0.5 text-[9px] font-medium text-[#656d76] leading-none"
                       >{{ num }}</span
                     >
                   }
@@ -31,23 +31,25 @@ import { CrosswordResponse } from '../crossword.service';
       </div>
       <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl">
         <div>
-          <h3 class="text-lg font-semibold text-gray-700 mb-2">Across</h3>
-          <ul class="space-y-1 text-sm text-gray-600">
+          <h3 class="text-sm font-semibold text-[#e6edf3] mb-2">Across</h3>
+          <ul class="space-y-1 text-sm text-[#8b949e]">
             @for (w of acrossWords(); track w.clue_number) {
               <li>
-                <span class="font-medium text-gray-800">{{ w.clue_number }}.</span>
-                {{ w.word }} ({{ w.length }})
+                <span class="font-medium text-[#e6edf3]">{{ w.clue_number }}.</span>
+                {{ w.word }}
+                <span class="text-[#656d76]">({{ w.length }})</span>
               </li>
             }
           </ul>
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-gray-700 mb-2">Down</h3>
-          <ul class="space-y-1 text-sm text-gray-600">
+          <h3 class="text-sm font-semibold text-[#e6edf3] mb-2">Down</h3>
+          <ul class="space-y-1 text-sm text-[#8b949e]">
             @for (w of downWords(); track w.clue_number) {
               <li>
-                <span class="font-medium text-gray-800">{{ w.clue_number }}.</span>
-                {{ w.word }} ({{ w.length }})
+                <span class="font-medium text-[#e6edf3]">{{ w.clue_number }}.</span>
+                {{ w.word }}
+                <span class="text-[#656d76]">({{ w.length }})</span>
               </li>
             }
           </ul>

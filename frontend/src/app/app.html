@@ -1,21 +1,38 @@
-<div class="min-h-screen bg-gray-50">
-  <header class="bg-white border-b border-gray-200 px-6 py-4">
-    <h1 class="text-2xl font-bold text-gray-800">Crossword Generator</h1>
-    <p class="text-sm text-gray-500 mt-1">
+<div class="min-h-screen bg-[#0d1117] text-[#e6edf3]">
+  <!-- Info button (top-left) -->
+  <button
+    (click)="showInfo.set(true)"
+    class="fixed top-4 left-4 z-40 w-8 h-8 rounded-full border border-[#30363d] bg-[#161b22] hover:bg-[#1c2128] flex items-center justify-center transition-colors"
+    title="About"
+  >
+    <span class="text-sm font-semibold text-[#8b949e]">i</span>
+  </button>
+
+  <!-- Live stats bar (top-right) -->
+  <div class="fixed top-4 right-4 z-40 flex items-center gap-3 text-xs text-[#8b949e]">
+    <span class="flex items-center gap-1.5">
+      <span class="w-2 h-2 rounded-full bg-[#3fb950] animate-pulse"></span>
+      {{ stats.activeUsers() }} online
+    </span>
+    <span class="text-[#30363d]">|</span>
+    <span>{{ stats.totalVisitors() }} visits</span>
+  </div>
+
+  <!-- Header -->
+  <header class="border-b border-[#30363d] px-6 py-5 pl-16">
+    <h1 class="text-xl font-semibold text-[#e6edf3]">Crossword Generator</h1>
+    <p class="text-xs text-[#8b949e] mt-1">
       Deterministic puzzles powered by Dancing Links
     </p>
   </header>
 
+  <!-- Main content -->
   <main class="max-w-4xl mx-auto px-6 py-8">
     <app-control-panel (generate)="onGenerate($event)" />
 
     @if (loading()) {
-      <div class="mt-8 flex items-center gap-3 text-gray-500">
-        <svg
-          class="animate-spin h-5 w-5"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
+      <div class="mt-8 flex items-center gap-3 text-[#8b949e]">
+        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
           <circle
             class="opacity-25"
             cx="12"
@@ -36,7 +53,7 @@
 
     @if (error(); as err) {
       <div
-        class="mt-8 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm"
+        class="mt-8 bg-[rgba(248,81,73,0.1)] border border-[#f8514980] text-[#f85149] px-4 py-3 rounded-lg text-sm"
       >
         {{ err }}
       </div>
@@ -44,9 +61,9 @@
 
     @if (puzzle(); as data) {
       <div class="mt-8">
-        <p class="text-xs text-gray-400 mb-3">
-          Seed: <span class="font-mono">{{ data.seed }}</span> &middot;
-          {{ data.size }}&times;{{ data.size }} &middot;
+        <p class="text-xs text-[#656d76] mb-3">
+          Seed: <span class="font-mono text-[#8b949e]">{{ data.seed }}</span>
+          &middot; {{ data.size }}&times;{{ data.size }} &middot;
           {{ data.words.length }} words
         </p>
         <app-crossword-grid [data]="data" />
@@ -54,3 +71,11 @@
     }
   </main>
 </div>
+
+@if (showInfo()) {
+  <app-info-overlay
+    [totalVisitors]="stats.totalVisitors()"
+    [activeUsers]="stats.activeUsers()"
+    (close)="showInfo.set(false)"
+  />
+}

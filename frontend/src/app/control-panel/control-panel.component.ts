@@ -14,24 +14,24 @@ export interface GenerateParams {
   template: `
     <form (ngSubmit)="onGenerate()" class="flex flex-wrap items-end gap-4">
       <div class="flex flex-col">
-        <label for="seed" class="text-xs font-medium text-gray-500 mb-1">Seed</label>
+        <label for="seed" class="text-xs font-medium text-[#8b949e] mb-1">Seed</label>
         <input
           id="seed"
           type="text"
           [(ngModel)]="seed"
           name="seed"
-          class="border border-gray-300 rounded-md px-3 py-2 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3] w-40 focus:outline-none focus:border-[#58a6ff] transition-colors"
           placeholder="Enter a seed..."
         />
       </div>
 
       <div class="flex flex-col">
-        <label for="lang" class="text-xs font-medium text-gray-500 mb-1">Language</label>
+        <label for="lang" class="text-xs font-medium text-[#8b949e] mb-1">Language</label>
         <select
           id="lang"
           [(ngModel)]="lang"
           name="lang"
-          class="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3] focus:outline-none focus:border-[#58a6ff] transition-colors"
         >
           <option value="en">English</option>
           <option value="da">Danish</option>
@@ -39,14 +39,14 @@ export interface GenerateParams {
       </div>
 
       <div class="flex flex-col">
-        <label for="difficulty" class="text-xs font-medium text-gray-500 mb-1"
+        <label for="difficulty" class="text-xs font-medium text-[#8b949e] mb-1"
           >Difficulty</label
         >
         <select
           id="difficulty"
           [(ngModel)]="difficulty"
           name="difficulty"
-          class="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3] focus:outline-none focus:border-[#58a6ff] transition-colors"
         >
           <option [ngValue]="1">Easy</option>
           <option [ngValue]="2">Medium</option>
@@ -55,12 +55,12 @@ export interface GenerateParams {
       </div>
 
       <div class="flex flex-col">
-        <label for="size" class="text-xs font-medium text-gray-500 mb-1">Grid Size</label>
+        <label for="size" class="text-xs font-medium text-[#8b949e] mb-1">Grid Size</label>
         <select
           id="size"
           [(ngModel)]="size"
           name="size"
-          class="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3] focus:outline-none focus:border-[#58a6ff] transition-colors"
         >
           <option [ngValue]="5">5 x 5</option>
           <option [ngValue]="7">7 x 7</option>
@@ -73,7 +73,7 @@ export interface GenerateParams {
 
       <button
         type="submit"
-        class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-5 py-2 rounded-md transition-colors"
+        class="bg-[#238636] hover:bg-[#2ea043] text-white font-medium text-sm px-5 py-2 rounded-lg transition-colors"
       >
         Generate
       </button>
