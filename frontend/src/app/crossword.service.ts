@@ -22,7 +22,7 @@ export interface CrosswordResponse {
 @Injectable({ providedIn: 'root' })
 export class CrosswordService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8000';
+  private readonly baseUrl = '/api';
 
   generate(
     seed: string,

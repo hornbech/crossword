@@ -21,7 +21,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "crossword.db")
+DB_PATH = os.path.join(
+    os.environ.get("DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data")),
+    "crossword.db",
+)
 
 engine = CrosswordEngine(DB_PATH)
 

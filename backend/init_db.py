@@ -1,8 +1,9 @@
 import sqlite3
 import os
 
-SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "schema.txt")
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "crossword.db")
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data"))
+SCHEMA_PATH = os.path.join(DATA_DIR, "schema.txt")
+DB_PATH = os.path.join(DATA_DIR, "crossword.db")
 
 
 def init_db():

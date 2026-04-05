@@ -1,8 +1,8 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "crossword.db")
-DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data"))
+DB_PATH = os.path.join(DATA_DIR, "crossword.db")
 
 
 def load_wordlist(lang: str) -> list[tuple[str, str, int, int]]:
@@ -46,7 +46,13 @@ def populate():
     conn = sqlite3.connect(DB_PATH)
     try:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM words")
+        cursor.execute("SELECT COUNT(*) FROM words")
+        count = cursor.fetchone()[0]
+        if count > 0:
+            print(f"Database already populated with {count} words, skipping.")
+            return
+
+
 
         total = 0
         for lang in ("en", "da"):

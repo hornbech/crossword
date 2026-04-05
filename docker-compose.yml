@@ -10,18 +10,19 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - DATABASE_URL=/app/data/crossword.db
+      - DATA_DIR=/app/data
     networks:
       - crossword-net
 
   frontend:
     build:
-      context: ./docker
-      dockerfile: frontend.Dockerfile
+      context: .
+      dockerfile: docker/frontend.Dockerfile
     ports:
       - "4200:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
     networks:
       - crossword-net
 
